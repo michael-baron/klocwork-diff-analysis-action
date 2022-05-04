@@ -1,0 +1,59 @@
+name: 'Klocwork Differential Analysis'
+description: 'Runs a Klocwork differential analysis'
+inputs:
+  capture-tool:
+    description: 'which Klocwork capture tool to use. Default is kwinject'
+    required: true
+    default: 'kwinject'
+  diff-list:
+    description: 'a text file containing the list of changed files per line'
+    required: true
+  build-command:
+    description: 'build command for the project'
+    required: true
+  url:
+    description: 'Klocwork server URL, e.g. http[s]://<server>:<port>'
+    required: true
+  project:
+    description: 'Klocwork server project name'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check Files
+      id: check_files
+      uses: andstor/file-existence-action@v1
+      with:
+        files: ${{ inputs.diff-list }}
+    - if: steps.check_files.outputs.files_exists == 'false'
+      uses: actions/github-script@v3
+      with:
+      script: |
+        core.setFailed('The scm diff file does not exist')
+    - if: toJSON( inputs.diff-list ) != "{}"
+      run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
+      shell: bash
+    - if: toJSON( inputs.diff-list ) != "{}"
+      run: kwciagent create --url ${{ inputs.url }}/${{ inputs.project }} -b kwinject.out
+      shell: bash
+    - if: toJSON( inputs.diff-list ) != "{}"
+      run: kwciagent run @${{ inputs.diff-list }}
+      shell: bash
+    - if: toJSON( inputs.diff-list ) != "{}"
+      run: kwciagent list -F json --report kw-issues.json @${{ inputs.diff-list }}
+      shell: bash
+    - if: toJSON( inputs.diff-list ) != "{}"
+      run: kwciagent list -F scriptable --report kw-qgate.txt @${{ inputs.diff-list }}
+      shell: bash
+    - if: toJSON( inputs.diff-list ) != "{}"
+      name: Upload New Issues File
+      uses: actions/upload-artifact@v3
+      with:
+        name: Klocwork Issues
+        path: kw-issues.json
+    - if: toJSON( inputs.diff-list ) != "{}" && toJSON( kw-qgate.txt ) != "{}"
+      uses: actions/github-script@v3
+      with:
+      script: |
+        core.setFailed('There are new Klocwork issues')
