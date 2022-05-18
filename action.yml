@@ -33,10 +33,10 @@ runs:
     - run: |
         filesize=$(wc -c "${{ inputs.diff-list }}" | awk '{print $1}')
         echo "::set-output name=diffFileSize::$filesize"
-    shell: bash
+      shell: bash
     - run: |
         echo "${{steps.set_var.outputs.diffFileSize}}"
-    shell: bash
+      shell: bash
     - if: steps.set_var.outputs.diffFileSize != "0"
       run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
       shell: bash
