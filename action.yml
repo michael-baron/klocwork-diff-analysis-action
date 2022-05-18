@@ -33,11 +33,7 @@ runs:
     - id: set_diff_file_size
       run: |
         filesize=$(wc -c "${{ inputs.diff-list }}" | awk '{print $1}')
-        echo $filesize
         echo "::set-output name=diffFileSize::$filesize"
-      shell: bash
-    - run: |
-        echo "${{steps.set_diff_file_size.outputs.diffFileSize}}"
       shell: bash
     - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
@@ -54,12 +50,6 @@ runs:
     - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: kwciagent list -F scriptable --report kw-qgate.txt @${{ inputs.diff-list }} || exit 0
       shell: bash
-    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
-      name: Upload New Issues File
-      uses: actions/upload-artifact@v3
-      with:
-        name: Klocwork Issues
-        path: kw-issues.json    
     - name: Check QGate File
       id: check_qgate_file
       uses: andstor/file-existence-action@v1
@@ -75,9 +65,12 @@ runs:
         echo $filesize
         echo "::set-output name=qgateFileSize::$filesize"
       shell: bash
-    - run: |
-        echo "${{steps.set_qgate_file_size.outputs.qgateFileSize}}"
-      shell: bash
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0' && steps.set_qgate_file_size.outputs.qgateFileSize != '0'
+      name: Upload New Issues File
+      uses: actions/upload-artifact@v3
+      with:
+        name: Klocwork Issues
+        path: kw-issues.json    
     - if: steps.set_diff_file_size.outputs.diffFileSize != '0' && steps.set_qgate_file_size.outputs.qgateFileSize != '0'
       uses: actions/github-script@v6
       with:
