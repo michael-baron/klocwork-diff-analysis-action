@@ -30,28 +30,35 @@ runs:
       uses: actions/github-script@v6
       with:
         script: core.setFailed('The scm diff file does not exist')
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - run: |
+        filesize=$(wc -c "${{ inputs.diff-list }}" | awk '{print $1}')
+        echo "::set-output name=diffFileSize::$filesize"
+    shell: bash
+    - run: |
+        echo "${{steps.set_var.outputs.diffFileSize}}"
+    shell: bash
+    - if: steps.set_var.outputs.diffFileSize != "0"
       run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
       shell: bash
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}"
       run: kwciagent create --url ${{ inputs.url }}/${{ inputs.project }} -b kwinject.out
       shell: bash
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}"
       run: kwciagent run @${{ inputs.diff-list }}
       shell: bash
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}"
       run: kwciagent list -F json --report kw-issues.json @${{ inputs.diff-list }}
       shell: bash
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}"
       run: kwciagent list -F scriptable --report kw-qgate.txt @${{ inputs.diff-list }}
       shell: bash
-    - if: toJSON( inputs.diff-list ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}"
       name: Upload New Issues File
       uses: actions/upload-artifact@v3
       with:
         name: Klocwork Issues
         path: kw-issues.json
-    - if: toJSON( inputs.diff-list ) != "{}" && toJSON( kw-qgate.txt ) != "{}"
+    - if: toJSON(inputs.diff-list) != "{}" && toJSON(kw-qgate.txt) != "{}"
       uses: actions/github-script@v6
       with:
         script: core.setFailed('There are new Klocwork issues')
