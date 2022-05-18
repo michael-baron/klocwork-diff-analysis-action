@@ -30,35 +30,37 @@ runs:
       uses: actions/github-script@v6
       with:
         script: core.setFailed('The scm diff file does not exist')
-    - run: |
+    - id: set_diff_file_size
+      run: |
         filesize=$(wc -c "${{ inputs.diff-list }}" | awk '{print $1}')
+        echo $filesize
         echo "::set-output name=diffFileSize::$filesize"
       shell: bash
     - run: |
-        echo "${{steps.set_var.outputs.diffFileSize}}"
+        echo "${{steps.set_diff_file_size.outputs.diffFileSize}}"
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: kwciagent create --url ${{ inputs.url }}/${{ inputs.project }} -b kwinject.out
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: kwciagent run @${{ inputs.diff-list }}
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: kwciagent list -F json --report kw-issues.json @${{ inputs.diff-list }}
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       run: kwciagent list -F scriptable --report kw-qgate.txt @${{ inputs.diff-list }}
       shell: bash
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       name: Upload New Issues File
       uses: actions/upload-artifact@v3
       with:
         name: Klocwork Issues
         path: kw-issues.json
-    - if: steps.set_var.outputs.diffFileSize != '0'
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
       uses: actions/github-script@v6
       with:
         script: core.setFailed('There are new Klocwork issues')
