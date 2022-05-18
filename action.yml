@@ -21,12 +21,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Check Files
-      id: check_files
+    - name: Check Diff File
+      id: check_diff_file
       uses: andstor/file-existence-action@v1
       with:
         files: ${{ inputs.diff-list }}
-    - if: steps.check_files.outputs.files_exists == 'false'
+    - if: steps.check_diff_file.outputs.files_exists == 'false'
       uses: actions/github-script@v6
       with:
         script: core.setFailed('The scm diff file does not exist')
@@ -59,8 +59,26 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: Klocwork Issues
-        path: kw-issues.json
-    - if: steps.set_diff_file_size.outputs.diffFileSize != '0'
+        path: kw-issues.json    
+    - name: Check QGate File
+      id: check_qgate_file
+      uses: andstor/file-existence-action@v1
+      with:
+        files: kw-qgate.txt
+    - if: steps.check_qgate_file.outputs.files_exists == 'false'
+      uses: actions/github-script@v6
+      with:
+        script: core.setFailed('The quality gate file does not exist')
+    - id: set_qgate_file_size
+      run: |
+        filesize=$(wc -c kw-qgate.txt | awk '{print $1}')
+        echo $filesize
+        echo "::set-output name=qgateFileSize::$filesize"
+      shell: bash
+    - run: |
+        echo "${{steps.set_qgate_file_size.outputs.qgateFileSize}}"
+      shell: bash
+    - if: steps.set_diff_file_size.outputs.diffFileSize != '0' && steps.set_qgate_file_size.outputs.qgateFileSize != '0'
       uses: actions/github-script@v6
       with:
         script: core.setFailed('There are new Klocwork issues')
