@@ -27,8 +27,9 @@ runs:
       with:
         files: ${{ inputs.diff-list }}
     - if: steps.check_files.outputs.files_exists == 'false'
-      uses: actions/github-script@v3
-      script: core.setFailed('The scm diff file does not exist')
+      uses: actions/github-script@v6
+      with:
+        script: core.setFailed('The scm diff file does not exist')
     - if: toJSON( inputs.diff-list ) != "{}"
       run: ${{ inputs.capture-tool }} ${{ inputs.build-command }}
       shell: bash
@@ -51,5 +52,6 @@ runs:
         name: Klocwork Issues
         path: kw-issues.json
     - if: toJSON( inputs.diff-list ) != "{}" && toJSON( kw-qgate.txt ) != "{}"
-      uses: actions/github-script@v3
-      script: core.setFailed('There are new Klocwork issues')
+      uses: actions/github-script@v6
+      with:
+        script: core.setFailed('There are new Klocwork issues')
